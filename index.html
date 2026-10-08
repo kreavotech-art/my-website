@@ -334,7 +334,7 @@
       <a href="#contact">Contact</a>
     </nav>
     <div class="navactions">
-      <button class="icon-btn" title="Search" aria-label="Search">
+      <button class="icon-btn" title="Search products" aria-label="Search products" onclick="focusSearch()">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
       </button>
       <button class="icon-btn" id="cartBtn" title="Quote list" aria-label="Open quote list" onclick="openCart()">
@@ -592,10 +592,10 @@
   <h3>Request a quote</h3>
   <p class="sub" id="quoteSub">Tell us what's going on — we'll come back with pricing.</p>
   <form onsubmit="submitQuote(event)">
-    <div class="field"><label>Full name</label><input type="text" required></div>
-    <div class="field"><label>Email or phone</label><input type="text" required></div>
+    <div class="field"><label>Full name</label><input type="text" name="name" required></div>
+    <div class="field"><label>Email or phone</label><input type="text" name="contact" required></div>
     <div class="field"><label>Service</label>
-      <select id="quoteService">
+      <select id="quoteService" name="service">
         <option>Computer &amp; Laptop Repair</option>
         <option>Business IT Support</option>
         <option>Network &amp; Wi-Fi Setup</option>
@@ -605,7 +605,7 @@
         <option>General Enquiry</option>
       </select>
     </div>
-    <div class="field"><label>Details</label><textarea rows="3" placeholder="What's happening with your device or setup?"></textarea></div>
+    <div class="field"><label>Details</label><textarea rows="3" name="details" placeholder="What's happening with your device or setup?"></textarea></div>
     <button type="submit" class="btn btn-primary btn-block">Send request</button>
   </form>
 </div>
@@ -614,12 +614,13 @@
 <div class="modal" id="checkoutModal">
   <button class="modal-close" onclick="closeAll()">✕</button>
   <h3>Request your quote</h3>
-  <p class="sub">We'll reply with pricing for everything in your quote list. This prototype doesn't send emails yet; connect a form service when you go live.</p>
+  <p class="sub">We'll reply with pricing for everything in your quote list.</p>
+  <div id="quoteSummary" style="max-height:140px;overflow:auto;border:1px solid var(--line);border-radius:10px;padding:10px 14px;margin-bottom:18px;font-size:13px;color:var(--ink-soft);background:var(--paper);"></div>
   <form onsubmit="submitItemQuote(event)">
-    <div class="field"><label>Full name</label><input type="text" required></div>
-    <div class="field"><label>Email or phone</label><input type="text" required></div>
-    <div class="field"><label>Business name (optional)</label><input type="text"></div>
-    <div class="field"><label>Notes</label><textarea rows="3" placeholder="Quantities, delivery location, timeframe..."></textarea></div>
+    <div class="field"><label>Full name</label><input type="text" name="name" required></div>
+    <div class="field"><label>Email or phone</label><input type="text" name="contact" required></div>
+    <div class="field"><label>Business name (optional)</label><input type="text" name="business"></div>
+    <div class="field"><label>Notes</label><textarea rows="3" name="notes" placeholder="Quantities, delivery location, timeframe..."></textarea></div>
     <button type="submit" class="btn btn-primary btn-block">Send quote request</button>
   </form>
 </div>
@@ -628,7 +629,7 @@
 
 <script>
   // ====== SHOP SETTINGS (edit these) ======
-  const PHOTO_BASE = '';   // set to 'img/' to load product photos from img/<SKU>.jpg (falls back to illustration)
+  const PHOTO_BASE = 'img/'; // product photos load from this folder (see photo_shotlist.csv); '' turns photos off
   const PAGE = 24;         // products shown per "Load more"
   // ========================================
 
@@ -640,7 +641,7 @@
   const ITEMS = DATA.rows.map((r,i) => {
     const brand = r[3] >= 0 ? BRANDS[r[3]] : '';
     return { id:i, sku:r[0], name:r[1], spec:r[2], brand, cat:CATS[r[4]], tag:r[5],
-             h:(r[0]+' '+r[1]+' '+r[2]+' '+brand).toLowerCase() };
+             h:(r[0]+' '+r[1]+' '+r[2]+' '+brand + ((brand==='Lenovo' && /\b[txlep]\d{2}[a-z]?\b/i.test(r[1]) && (CATS[r[4]]==='Laptops'||CATS[r[4]]==='Workstations')) ? ' thinkpad' : '') + ' ' + (r[1]+' '+r[2]).replace(/(\d+(?:\.\d+)?)\s?"/g,'$1 inch')).toLowerCase() };
   });
 
   const ORDER = ['Laptops','Monitors','Desktops','Workstations','Networking','Servers & Storage','Printers & Projectors','Meeting Rooms & Video','Headsets & Phones','Commercial Displays','Security & CCTV','Power & UPS','Accessories','Cables','Components','Tablets & Mobile','Cameras','Software'];
@@ -689,10 +690,21 @@
     return true;
   }
   function apply(){
-    const list = ITEMS.filter(p => matches(p,false));
+    let list = ITEMS.filter(p => matches(p,false));
+    S.fuzzy = false;
+    if(!list.length && S.q && S.q.length > 1){
+      const need = Math.ceil(S.q.length / 2), sc = new Map();
+      for(const p of ITEMS){
+        if((S.cat && p.cat !== S.cat) || (S.brand && p.brand !== S.brand)) continue;
+        let n = 0; for(const t of S.q) if(p.h.indexOf(t) !== -1) n++;
+        if(n >= need){ sc.set(p.id, n); list.push(p); }
+      }
+      list.sort((a,b)=> sc.get(b.id) - sc.get(a.id));
+      S.fuzzy = list.length > 0;
+    }
     const by = S.sort;
-    if(by === 'name') list.sort((a,b)=>a.name.localeCompare(b.name));
-    else list.sort((a,b)=> (a.tag?1:0)-(b.tag?1:0) || catRank[a.cat]-catRank[b.cat] || a.name.localeCompare(b.name));
+    if(S.fuzzy){} else if(by === 'name') list.sort((a,b)=>a.name.localeCompare(b.name));
+    else if(!S.fuzzy) list.sort((a,b)=> (a.tag?1:0)-(b.tag?1:0) || catRank[a.cat]-catRank[b.cat] || a.name.localeCompare(b.name));
     S.list = list; S.shown = PAGE;
     render();
   }
@@ -703,8 +715,13 @@
     for(const c of CAT_ORDER){ if(!counts[c]) continue; html += `<button class="chip ${S.cat===c?'on':''}" onclick="setCat('${c.replace(/'/g,"\\'")}')">${esc(c)}<b>${counts[c].toLocaleString()}</b></button>`; }
     document.getElementById('chips').innerHTML = html;
   }
+  function slug(s){ return String(s).toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,''); }
+  // photo lookup order: exact product, then brand + category, then category, then the illustration
+  function photoChain(p){ return [PHOTO_BASE+'sku/'+encodeURIComponent(p.sku)+'.jpg', PHOTO_BASE+'brand/'+slug(p.brand||'other')+'-'+slug(p.cat)+'.jpg', PHOTO_BASE+'cat/'+slug(p.cat)+'.jpg']; }
+  function nextPhoto(img){ const c = JSON.parse(img.dataset.c), i = (+img.dataset.i) + 1; if(i >= c.length){ img.remove(); return; } img.dataset.i = i; img.src = c[i]; }
   function card(p){
-    const photo = PHOTO_BASE ? `<img loading="lazy" alt="${esc(p.name)}" src="${PHOTO_BASE}${encodeURIComponent(p.sku)}.jpg" onerror="this.remove()">` : '';
+    const chain = photoChain(p);
+    const photo = PHOTO_BASE ? `<img loading="lazy" alt="${esc(p.name)}" data-i="0" data-c="${esc(JSON.stringify(chain))}" src="${esc(chain[0])}" onerror="nextPhoto(this)">` : '';
     return `<div class="prod-card">
       <div class="prod-media">${art(p.cat)}${photo}<span class="prod-tag">${esc(p.brand || p.cat)}</span>${p.tag?`<span class="badge-t">${p.tag}</span>`:''}</div>
       <div class="prod-body">
@@ -722,13 +739,14 @@
     const grid = document.getElementById('prodGrid');
     const slice = S.list.slice(0, S.shown);
     grid.innerHTML = slice.length ? slice.map(card).join('') : '<div class="no-results">No products match that search. Try fewer words or another category.</div>';
-    document.getElementById('resultCount').textContent = `Showing ${slice.length.toLocaleString()} of ${S.list.length.toLocaleString()} products`;
+    document.getElementById('resultCount').textContent = (S.fuzzy ? 'No exact match, showing closest results · ' : '') + `Showing ${slice.length.toLocaleString()} of ${S.list.length.toLocaleString()} products`;
     document.getElementById('moreBtn').style.display = S.shown < S.list.length ? '' : 'none';
   }
   function showMore(){ S.shown += PAGE; render(); }
   function setCat(c){ S.cat = c; apply(); }
   function goCat(c){ S.cat = c; S.q=''; document.getElementById('q').value=''; apply(); }
-  function onSearch(){ clearTimeout(searchTimer); searchTimer = setTimeout(()=>{ S.q = document.getElementById('q').value.toLowerCase().split(/\s+/).filter(Boolean); apply(); }, 180); }
+  function focusSearch(){ document.getElementById('shop').scrollIntoView({behavior:'smooth'}); setTimeout(()=>document.getElementById('q').focus(), 450); }
+  function onSearch(){ clearTimeout(searchTimer); searchTimer = setTimeout(()=>{ S.q = document.getElementById('q').value.toLowerCase().split(/\s+/).filter(Boolean); if(S.q.length) S.cat=''; apply(); }, 180); }
   function onFilter(){ S.brand = document.getElementById('brandSel').value; S.sort = document.getElementById('sortSel').value; apply(); }
 
   // ---- cart ----
@@ -764,6 +782,7 @@
   function checkout(){
     if(!cart.length){ showToast('Add a product first'); return; }
     document.getElementById('cartDrawer').classList.remove('show');
+    document.getElementById('quoteSummary').innerHTML = cart.map(i => i.qty + ' x ' + esc(ITEMS[i.id].name)).join('<br>');
     document.getElementById('checkoutModal').classList.add('show');
   }
   function openQuote(service){
@@ -775,8 +794,38 @@
   function closeAll(){
     ['overlay','cartDrawer','quoteModal','checkoutModal'].forEach(id => document.getElementById(id).classList.remove('show'));
   }
-  function submitQuote(e){ e.preventDefault(); closeAll(); showToast("Quote request sent — we'll be in touch shortly"); }
-  function submitItemQuote(e){ e.preventDefault(); closeAll(); showToast('Quote request sent — pricing coming your way'); }
+  const QUOTE_EMAIL = 'info@kreavotech.com';
+  function cartLines(){ return cart.map(i => { const p = ITEMS[i.id]; return i.qty + ' x ' + p.name + ' (SKU ' + p.sku + ')'; }); }
+  async function sendQuote(fields, btn){
+    const label = btn.textContent; btn.disabled = true; btn.textContent = 'Sending...';
+    const body = Object.assign({ _subject:'Quote request from kreavotech.com', _template:'table', _captcha:'false' }, fields);
+    if(/@/.test(fields.contact || '')) body._replyto = fields.contact;
+    try{
+      const r = await fetch('https://formsubmit.co/ajax/' + QUOTE_EMAIL, { method:'POST', headers:{'Content-Type':'application/json','Accept':'application/json'}, body: JSON.stringify(body) });
+      const j = await r.json();
+      return j.success === true || j.success === 'true';
+    }catch(err){ return false; }
+    finally{ btn.disabled = false; btn.textContent = label; }
+  }
+  function emailFallback(fields){
+    const text = Object.entries(fields).map(([k,v]) => k + ': ' + v).join('\n');
+    showToast("Couldn't send online, opening your email app...");
+    setTimeout(()=>{ location.href = 'mailto:' + QUOTE_EMAIL + '?subject=' + encodeURIComponent('Quote request') + '&body=' + encodeURIComponent(text.slice(0,1800)); }, 900);
+  }
+  async function submitQuote(e){
+    e.preventDefault(); const form = e.target;
+    const fields = Object.fromEntries(new FormData(form).entries());
+    const ok = await sendQuote(fields, form.querySelector('button[type=submit]'));
+    if(ok){ form.reset(); closeAll(); showToast("Quote request sent. We'll be in touch shortly."); } else emailFallback(fields);
+  }
+  async function submitItemQuote(e){
+    e.preventDefault(); const form = e.target;
+    if(!cart.length){ showToast('Add a product first'); return; }
+    const fields = Object.fromEntries(new FormData(form).entries());
+    fields.items = cartLines().join('\n');
+    const ok = await sendQuote(fields, form.querySelector('button[type=submit]'));
+    if(ok){ cart = []; renderCart(); form.reset(); closeAll(); showToast("Quote request sent. We'll be in touch shortly."); } else emailFallback(fields);
+  }
   let toastTimer;
   function showToast(msg){
     const t = document.getElementById('toast');
