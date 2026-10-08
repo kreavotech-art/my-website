@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Shop IT Hardware | Kreavo Tech Adelaide</title>
+<meta name="description" content="Browse laptops, monitors, desktops, networking, servers and more from Dell, HP, Lenovo, Cisco and others. Request a quote from Kreavo Tech in Adelaide.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<header>
+  <div class="wrap nav">
+    <a href="index.html" class="brand">
+      <img class="brand-logo" src="logo.jpg" width="122" height="34" alt="Kreavo Tech">
+      <span class="brand-tag">IT HARDWARE &amp; SERVICES</span>
+    </a>
+    <nav class="navlinks" id="navlinks">
+      <a href="index.html">Home</a>
+      <a href="shop.html" class="active">Shop</a>
+      <a href="services.html">Services</a>
+      <a href="contact.html">Contact</a>
+    </nav>
+    <div class="navactions">
+      <button class="icon-btn" title="Search products" aria-label="Search products" onclick="goSearch()">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+      </button>
+      <button class="icon-btn" id="cartBtn" title="Quote list" aria-label="Open quote list" onclick="openCart()">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>
+        <span class="cart-badge" id="cartBadge">0</span>
+      </button>
+      <button class="icon-btn burger" aria-label="Menu" onclick="toggleNav()">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M3 12h18M3 18h18"/></svg>
+      </button>
+    </div>
+  </div>
+</header>
+
+<main id="top">
+  <div class="page-hero"><div class="wrap">
+    <div class="eyebrow">Hardware</div>
+    <h1>Shop the range</h1>
+    <p id="shopIntro">Business and consumer IT hardware from the brands you know. Add what you need and we will send you a quote.</p>
+  </div></div>
+  <section id="shop" style="padding-top:44px;">
+    <div class="wrap">
+
+      <div class="shop-tools">
+        <div class="search-box">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+          <input id="q" type="search" placeholder="Search laptops, monitors, switches, SKUs…" oninput="onSearch()" aria-label="Search products">
+        </div>
+        <select class="sel" id="brandSel" onchange="onFilter()" aria-label="Filter by brand"><option value="">All brands</option></select>
+        <select class="sel" id="sortSel" onchange="onFilter()" aria-label="Sort products">
+          <option value="featured">Featured</option>
+          <option value="low">Price: low to high</option>
+          <option value="high">Price: high to low</option>
+          <option value="name">Name: A to Z</option>
+        </select>
+      </div>
+
+      <div class="chips" id="chips"></div>
+      <div class="result-bar"><span id="resultCount"></span><span>Prices ex GST · AUD</span></div>
+      <div class="prod-grid" id="prodGrid"></div>
+      <div class="more-wrap"><button class="btn btn-outline" id="moreBtn" onclick="showMore()">Load more</button></div>
+    </div>
+  </section>
+
+
+</main>
+
+<footer>
+  <div class="wrap">
+    <div class="foot-grid">
+      <div class="foot-brand">
+        <div class="brand"><img class="brand-logo" style="height:30px;" src="logo.jpg" width="108" height="30" alt="Kreavo Tech"></div>
+        <p>Adelaide-based IT hardware and repairs, shipping and servicing customers across Australia.</p>
+      </div>
+      <div class="foot-col">
+        <h5>Shop</h5>
+        <a href="shop.html?cat=Laptops">Laptops</a>
+        <a href="shop.html?cat=Monitors">Monitors</a>
+        <a href="shop.html?cat=Networking">Networking</a>
+        <a href="shop.html">All products</a>
+      </div>
+      <div class="foot-col">
+        <h5>Company</h5>
+        <a href="services.html">IT services</a>
+        <a href="contact.html">Contact</a>
+        <a href="index.html">Home</a>
+      </div>
+      <div class="foot-col">
+        <h5>Contact</h5>
+        <a href="contact.html">Adelaide, South Australia</a>
+        <a href="mailto:info@kreavotech.com">info@kreavotech.com</a>
+        <a href="tel:+61452585720">+61 452 585 720</a>
+      </div>
+    </div>
+    <div class="foot-bottom">
+      <span>&copy; 2026 Kreavo Tech. All rights reserved.</span>
+      <span class="mono">KREAVOTECH.COM</span>
+    </div>
+  </div>
+</footer>
+
+<!-- CART DRAWER -->
+<div class="overlay" id="overlay" onclick="closeAll()"></div>
+<div class="drawer" id="cartDrawer">
+  <div class="drawer-head">
+    <h3>Your Quote List</h3>
+    <button class="drawer-close" onclick="closeAll()">✕</button>
+  </div>
+  <div class="cart-items" id="cartItems"></div>
+  <div class="drawer-foot">
+    <div id="quoteItemsNote" style="font-family:'IBM Plex Mono',monospace;font-size:12px;color:var(--ink-soft);margin-bottom:14px;"></div>
+    <button class="btn btn-primary btn-block" onclick="checkout()">Request quote</button>
+  </div>
+</div>
+
+<!-- QUOTE MODAL -->
+<div class="modal" id="quoteModal">
+  <button class="modal-close" onclick="closeAll()">✕</button>
+  <h3>Request a quote</h3>
+  <p class="sub" id="quoteSub">Tell us what's going on — we'll come back with pricing.</p>
+  <form onsubmit="submitQuote(event)">
+    <div class="field"><label>Full name</label><input type="text" name="name" required></div>
+    <div class="field"><label>Email or phone</label><input type="text" name="contact" required></div>
+    <div class="field"><label>Service</label>
+      <select id="quoteService" name="service">
+        <option>Computer &amp; Laptop Repair</option>
+        <option>Business IT Support</option>
+        <option>Network &amp; Wi-Fi Setup</option>
+        <option>Data Recovery &amp; Backup</option>
+        <option>Custom PC Builds</option>
+        <option>On-site Installation</option>
+        <option>General Enquiry</option>
+      </select>
+    </div>
+    <div class="field"><label>Details</label><textarea rows="3" name="details" placeholder="What's happening with your device or setup?"></textarea></div>
+    <button type="submit" class="btn btn-primary btn-block">Send request</button>
+  </form>
+</div>
+
+<!-- QUOTE LIST MODAL -->
+<div class="modal" id="checkoutModal">
+  <button class="modal-close" onclick="closeAll()">✕</button>
+  <h3>Request your quote</h3>
+  <p class="sub">We'll reply with pricing for everything in your quote list.</p>
+  <div id="quoteSummary" style="max-height:140px;overflow:auto;border:1px solid var(--line);border-radius:10px;padding:10px 14px;margin-bottom:18px;font-size:13px;color:var(--ink-soft);background:var(--paper);"></div>
+  <form onsubmit="submitItemQuote(event)">
+    <div class="field"><label>Full name</label><input type="text" name="name" required></div>
+    <div class="field"><label>Email or phone</label><input type="text" name="contact" required></div>
+    <div class="field"><label>Business name (optional)</label><input type="text" name="business"></div>
+    <div class="field"><label>Notes</label><textarea rows="3" name="notes" placeholder="Quantities, delivery location, timeframe..."></textarea></div>
+    <button type="submit" class="btn btn-primary btn-block">Send quote request</button>
+  </form>
+</div>
+
+<div class="toast" id="toast"><span class="dot"></span><span id="toastMsg"></span></div>
+
+
+<script src="shop-data.js"></script>
+<script src="site.js"></script>
+<script src="shop.js"></script>
+</body>
+</html>
